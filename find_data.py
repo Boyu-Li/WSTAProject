@@ -1,7 +1,7 @@
 import lucene
 from java.nio.file import Paths
 from org.apache.lucene.store import SimpleFSDirectory
-from org.apache.lucene.search import IndexSearcher, BooleanClause
+from org.apache.lucene.search import IndexSearcher, BooleanClause, BooleanQuery
 from org.apache.lucene.index import DirectoryReader
 from org.apache.pylucene.queryparser.classic import PythonMultiFieldQueryParser
 from org.apache.lucene.queryparser.classic import QueryParser
@@ -25,12 +25,14 @@ class Searcher():
                 text = text.replace(c, ' ')
         return text
 
-    def search(self, query, topk=10):
+    def search(self, query, topk=20):
+        print(query)
         query = self.repalcer(query)
         query = PythonMultiFieldQueryParser.escape(query)
         qp = PythonMultiFieldQueryParser(['name', 'contents'], self.analyzer)
         query = qp.parse(query, ['name', 'contents'],
-                         [BooleanClause.Occur.SHOULD, BooleanClause.Occur.SHOULD], self.analyzer)
+                         [BooleanClause.Occur.MUST, BooleanClause.Occur.MUST], self.analyzer)
+        print(query)
         scores = self.searcher.search(query, topk).scoreDocs
         docnames = []
         doccontents = []
@@ -66,7 +68,46 @@ class Searcher():
             s.append(score.score)
         return docnames, doccontents, s
 
-# a = Searcher()
-# c = "Keith Stanfield's entire name is LaKeith Lee \"Keith'' Stanfield "
-# b = a.search(c)
-# print(b)
+
+    def search2(self, query, topk=10):
+        query = self.repalcer(query)
+        query = QueryParser.escape(query)
+        query1 = QueryParser('name', self.analyzer).parse(query)
+        query2 = QueryParser('name-contents', self.analyzer).parse(query)
+        scores1 = self.searcher.search(query1, 30).scoreDocs
+        scores2 = self.searcher.search(query2, 30).scoreDocs
+        name1 = []
+        name2 = []
+        for score1 in scores1:
+            doc1 = self.searcher.doc(score1.doc)
+            t = doc1.get('name')
+            if t not in name1:
+                name1.append(t)
+            if len(name1)>2:
+                break
+        print(name1)
+        name2.append(name1[0])
+        for score2 in scores2:
+            doc2 = self.searcher.doc(score2.doc)
+            name2.append(doc2.get('name-sid'))
+        print(set(name2))
+        name = set(name1)&set(name2)
+        print(list(name))
+        # query2 = QueryParser('name-sid', self.analyzer).parse(docname)
+        # print('query2:', query2)
+        # scores2 = self.searcher.search(query2, topk).scoreDocs
+        # print(scores2)
+
+        # for score in scores2:
+        #     doc = self.searcher.doc(score.doc)
+        #     docnames2.append(doc.get('name-sid'))
+        #     doccontents2.append(doc.get('contents'))
+        # print(docnames2, doccontents2)
+        # #return docnames2, doccontents2
+
+
+
+a = Searcher()
+c = "Zach Galifianakis was featured in Puss in Boots."
+b = a.search2(c)
+print(b)
