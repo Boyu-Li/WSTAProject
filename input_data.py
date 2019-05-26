@@ -54,7 +54,7 @@ class Inputing(object):
         return input_examples
 
     def input_test(self):
-        pickle_file_dir = os.path.join(self.pickledir, 'test.txt')
+        pickle_file_dir = os.path.join(self.pickledir, 'test_dev.txt')
         if not os.path.exists(pickle_file_dir):
             df = self.loader.test_loader()
             with open(pickle_file_dir, 'wb') as f:
@@ -70,5 +70,5 @@ class Inputing(object):
 
 inputformatting = Inputing()
 inputformatting.input_train()
-inputformatting.input_dev()
-inputformatting.input_test()
+#inputformatting.input_dev()
+#inputformatting.input_test()

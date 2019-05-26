@@ -86,7 +86,7 @@ class Outputing(object):
                 labels.append(label)
 
         #labels = [labels[i: i + 10] for i in range(0, len(labels) - 9, 3)]
-        pickle_file_dir = os.path.join(self.pickledir, 'test-5-24-randomdev.txt')
+        pickle_file_dir = os.path.join(self.pickledir, 'test.txt')
         with open(pickle_file_dir, 'rb') as f:
             df = pickle.load(f)
         output = {}
@@ -111,26 +111,6 @@ class Outputing(object):
                          'label': 'NOT ENOUGH INFO', 'score': df.loc[[i+j], ['score']].values[0][0],
                          'evidence': []}
                 print(d)
-            # if (df.loc[[i], ['id']].values[0][0]+str(n)) not in output.keys():
-            #     n = 0
-            # else:
-            #     n += 1
-            # if labels[i]=='NOT ENOUGH INFO':
-            #     output[df.loc[[i], ['id']].values[0][0]+str(n)] = {'claim': df.loc[[i], ['claim']].values[0][0],
-            #                                                 'label': 'NOT ENOUGH INFO','score':df.loc[[i], ['score']].values[0][0],
-            #                                                 'evidence': []}
-            # elif labels[i]=='SUPPORT':
-            #     output[df.loc[[i], ['id']].values[0][0]+str(n)] = {'claim': df.loc[[i], ['claim']].values[0][0],
-            #                                                 'label': 'SUPPORTS','score':df.loc[[i], ['score']].values[0][0],
-            #                                                 'evidence': df.loc[[i], ['docname']].values[0][0]}
-            # else:
-            #     output[df.loc[[i], ['id']].values[0][0]+str(n)] = {'claim': df.loc[[i], ['claim']].values[0][0],
-            #                                                 'label': 'REFUTES','score':df.loc[[i], ['score']].values[0][0],
-            #                                                 'evidence': df.loc[[i], ['docname']].values[0][0]}
-
-
-        # with open(os.path.join(self.outputdir, 'all_test_results.json'), 'w') as f:
-        #     json.dump(output, f)
 
 outputformatting = Outputing()
 #outputformatting.output_test_all()

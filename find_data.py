@@ -25,57 +25,79 @@ class Searcher():
                 text = text.replace(c, ' ')
         return text
 
-    def search(self, query, topk=20):
-        print(query)
-        query = self.repalcer(query)
-        query = PythonMultiFieldQueryParser.escape(query)
-        qp = PythonMultiFieldQueryParser(['name', 'contents'], self.analyzer)
-        query = qp.parse(query, ['name', 'contents'],
-                         [BooleanClause.Occur.MUST, BooleanClause.Occur.MUST], self.analyzer)
-        print(query)
-        scores = self.searcher.search(query, topk).scoreDocs
-        docnames = []
-        doccontents = []
-        for score in scores:
-            doc = self.searcher.doc(score.doc)
-            docnames.append(doc.get('docname'))
-            doccontents.append(doc.get('contents'))
-        return docnames, doccontents
+    # def search(self, query, topk=20):
+    #     print(query)
+    #     query = self.repalcer(query)
+    #     query = PythonMultiFieldQueryParser.escape(query)
+    #     qp = PythonMultiFieldQueryParser(['name', 'contents'], self.analyzer)
+    #     query = qp.parse(query, ['name', 'contents'],
+    #                      [BooleanClause.Occur.MUST, BooleanClause.Occur.MUST], self.analyzer)
+    #     print(query)
+    #     scores = self.searcher.search(query, topk).scoreDocs
+    #     docnames = []
+    #     doccontents = []
+    #     for score in scores:
+    #         doc = self.searcher.doc(score.doc)
+    #         docnames.append(doc.get('docname'))
+    #         doccontents.append(doc.get('contents'))
+    #     return docnames, doccontents
 
     def retrieve(self, term, sid):
         query = term + ' ' + str(sid)
         query = self.repalcer(query)
         query = QueryParser.escape(query)
-        query = QueryParser('docname', self.analyzer).parse(query)
+        query = QueryParser('name-sid', self.analyzer).parse(query)
         score = self.searcher.search(query, 1).scoreDocs
         doc = self.searcher.doc(score[0].doc)
-        return doc.get('docname'), doc.get('contents')
+        return doc.get('name-sid'), doc.get('contents')
 
     def search_scores(self, query, topk=10):
-        query = self.repalcer(query)
-        qp = PythonMultiFieldQueryParser(['name', 'contents'], self.analyzer)
-        query = qp.parse(query, ['name', 'contents'],
-                         [BooleanClause.Occur.SHOULD, BooleanClause.Occur.SHOULD], self.analyzer)
-        scores = self.searcher.search(query, topk).scoreDocs
-
-        docnames = []
-        doccontents = []
-        s = []
-        for score in scores:
-            doc = self.searcher.doc(score.doc)
-            docnames.append(doc.get('docname'))
-            doccontents.append(doc.get('contents'))
-            s.append(score.score)
-        return docnames, doccontents, s
-
-
-    def search2(self, query, topk=10):
         query = self.repalcer(query)
         query = QueryParser.escape(query)
         query1 = QueryParser('name', self.analyzer).parse(query)
         query2 = QueryParser('name-contents', self.analyzer).parse(query)
+        # print(query2)
         scores1 = self.searcher.search(query1, 30).scoreDocs
-        scores2 = self.searcher.search(query2, 30).scoreDocs
+        scores2 = self.searcher.search(query2, 50).scoreDocs
+        name1 = []
+        name2 = []
+        for score1 in scores1:
+            doc1 = self.searcher.doc(score1.doc)
+            t = doc1.get('name')
+            if t not in name1:
+                name1.append(t)
+            if len(name1) > 2:
+                break
+        # print(name1)
+        name2.append(name1[0])
+        docnames = []
+        doccontents = []
+        s = []
+        maxscore = scores2[0].score
+        for score2 in scores2:
+            doc2 = self.searcher.doc(score2.doc)
+            tname = doc2.get('name')
+
+            if tname in name1:
+                docnames.append(doc2.get('name-sid'))
+                doccontents.append(doc2.get('contents'))
+                s.append(score2.score)
+                # print(score2.score)
+            # print(score2.score)
+            # print(maxscore)
+            if score2.score < maxscore - 10 or len(docnames) > 5:
+                break
+        return docnames, doccontents,s
+
+
+    def search(self, query, topk=10):
+        query = self.repalcer(query)
+        query = QueryParser.escape(query)
+        query1 = QueryParser('name', self.analyzer).parse(query)
+        query2 = QueryParser('name-contents', self.analyzer).parse(query)
+        #print(query2)
+        scores1 = self.searcher.search(query1, 30).scoreDocs
+        scores2 = self.searcher.search(query2, 50).scoreDocs
         name1 = []
         name2 = []
         for score1 in scores1:
@@ -85,29 +107,26 @@ class Searcher():
                 name1.append(t)
             if len(name1)>2:
                 break
-        print(name1)
+        #print(name1)
         name2.append(name1[0])
+        docnames=[]
+        doccontents=[]
+        maxscore = scores2[0].score
         for score2 in scores2:
             doc2 = self.searcher.doc(score2.doc)
-            name2.append(doc2.get('name-sid'))
-        print(set(name2))
-        name = set(name1)&set(name2)
-        print(list(name))
-        # query2 = QueryParser('name-sid', self.analyzer).parse(docname)
-        # print('query2:', query2)
-        # scores2 = self.searcher.search(query2, topk).scoreDocs
-        # print(scores2)
+            tname = doc2.get('name')
 
-        # for score in scores2:
-        #     doc = self.searcher.doc(score.doc)
-        #     docnames2.append(doc.get('name-sid'))
-        #     doccontents2.append(doc.get('contents'))
-        # print(docnames2, doccontents2)
-        # #return docnames2, doccontents2
+            if tname in name1:
+                docnames.append(doc2.get('name-sid'))
+                doccontents.append(doc2.get('contents'))
+                #print(score2.score)
+            #print(score2.score)
+            #print(maxscore)
+            if score2.score < maxscore-10 or len(docnames)>5:
+                break
+        return docnames, doccontents
 
 
-
-a = Searcher()
-c = "Zach Galifianakis was featured in Puss in Boots."
-b = a.search2(c)
-print(b)
+# a = Searcher()
+# c = "Cristiano Ronaldo was unathletic."
+# b = a.search2(c)

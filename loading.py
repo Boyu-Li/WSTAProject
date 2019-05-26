@@ -35,7 +35,7 @@ class Loader(object):
                         for e in d['evidence']:
                             if len(ref_examples) < max_sample:
                                 _, content = self._retrieve(e)
-                                sup_examples.append([c, i, d['claim'], content.strip(), d['label']])
+                                ref_examples.append([c, i, d['claim'], content.strip(), d['label']])
                                 #_, content,score = self._retrieve(e)
                                 #ref_examples.append([c, i, d['claim'], content.strip(), int(score), d['label']])
                                 c += 1
@@ -44,10 +44,8 @@ class Loader(object):
                     else:
                         if len(nei_examples) < max_sample:
                             _, content = self._search(d['claim'])
-                            #_, content, score = self._search(d['claim'])
-                            content = content[0]
-                            #nei_examples.append([c, i, d['claim'], content.strip(),int(score[0].score), d['label']])
-                            nei_examples.append([c, i, d['claim'], content.strip(), d['label']])
+                            for _content in content:
+                                nei_examples.append([c, i, d['claim'], _content.strip(), d['label']])
                             c += 1
                             if c % 50 == 0:
                                 print('%d examples loaded' % c)
@@ -86,7 +84,7 @@ class Loader(object):
                         for e in d['evidence']:
                             if len(ref_examples) < max_sample:
                                 _, content = self._retrieve(e)
-                                sup_examples.append([c, i, d['claim'], content.strip(), d['label']])
+                                ref_examples.append([c, i, d['claim'], content.strip(), d['label']])
                                 #_, content,score = self._retrieve(e)
                                 #ref_examples.append([c, i, d['claim'], content.strip(), int(score), d['label']])
                                 c += 1
@@ -95,10 +93,8 @@ class Loader(object):
                     else:
                         if len(nei_examples) < max_sample:
                             _, content = self._search(d['claim'])
-                            #_, content, score = self._search(d['claim'])
-                            content = content[0]
-                            #nei_examples.append([c, i, d['claim'], content.strip(),int(score[0].score), d['label']])
-                            nei_examples.append([c, i, d['claim'], content.strip(), d['label']])
+                            for _content in content:
+                                nei_examples.append([c, i, d['claim'], _content.strip(), d['label']])
                             c += 1
                             if c % 50 == 0:
                                 print('%d examples loaded' % c)
@@ -111,12 +107,11 @@ class Loader(object):
         samples = sup_examples + ref_examples + nei_examples
         print(samples)
         df = pd.DataFrame(samples, columns=['index', 'id', 'claim', 'evidence', 'label'])
-        #df = pd.DataFrame(samples, columns=['index', 'id', 'claim', 'evidence', 'score', 'label'])
 
         return df.sample(frac=1).reset_index(drop=True)
 
     def test_loader(self):
-        dir = os.path.join(self.datadir, 'test-unlabelled.json')
+        dir = os.path.join(self.datadir, 'random-devset.json')
         with open(dir) as f:
             data = json.loads(f.read())
             examples = []
