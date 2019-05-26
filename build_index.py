@@ -70,10 +70,12 @@ class SearchEngine():
                         docname = line[0] + ' ' + line[1]
                         name = self.repalcer(line[0])
                         contents = line[2]
+                        name_contents = name + ' ' + contents
                         doc = Document()
-                        doc.add(Field('docname', docname, t1))
+                        doc.add(Field('name-sid', docname, t1))
                         doc.add(Field('name', name, t1))
                         doc.add(Field('contents', contents, t1))
+                        doc.add(Field('name-contents', name_contents, t1))
                         writer.addDocument(doc)
                 print('File %d done indexing' % i)
 
