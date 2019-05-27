@@ -8,6 +8,9 @@ from org.apache.lucene.queryparser.classic import QueryParser
 from org.apache.lucene.search.similarities import BM25Similarity
 from org.apache.lucene.analysis.miscellaneous import LimitTokenCountAnalyzer
 from org.apache.lucene.analysis.standard import StandardAnalyzer
+import nltk
+from nltk.stem import WordNetLemmatizer
+from nltk.corpus import wordnet
 
 class Searcher():
 
@@ -18,6 +21,31 @@ class Searcher():
         self.searcher = IndexSearcher(DirectoryReader.open(search_dir))
         self.searcher.setSimilarity(BM25Similarity())
         self.analyzer = LimitTokenCountAnalyzer(StandardAnalyzer(), 1048576)
+        self.lemmatizer = nltk.stem.WordNetLemmatizer()
+
+    def nltk2wn_tag(self,nltk_tag):
+        if nltk_tag.startswith('J'):
+            return wordnet.ADJ
+        elif nltk_tag.startswith('V'):
+            return wordnet.VERB
+        elif nltk_tag.startswith('N'):
+            return wordnet.NOUN
+        elif nltk_tag.startswith('R'):
+            return wordnet.ADV
+        else:
+            return None
+
+    def lemmatize_sentence(self, sentence):
+        nltk_tagged = nltk.pos_tag(nltk.word_tokenize(sentence))
+        wn_tagged = map(lambda x: (x[0], self.nltk2wn_tag(x[1])), nltk_tagged)
+        res_words = []
+        for word, tag in wn_tagged:
+            if tag is None:
+                res_words.append(word)
+            else:
+                res_words.append(self.lemmatizer.lemmatize(word, tag))
+        return " ".join(res_words)
+
     def repalcer(self, text):
         chars = '/\\`*_{}[]()>#+-.!$‘"'
         for c in chars:
@@ -66,7 +94,7 @@ class Searcher():
             t = doc1.get('name')
             if t not in name1:
                 name1.append(t)
-            if len(name1) > 2:
+            if len(name1) > 1:
                 break
         # print(name1)
         name2.append(name1[0])
@@ -74,28 +102,51 @@ class Searcher():
         doccontents = []
         s = []
         maxscore = scores2[0].score
+        t_doc = self.searcher.doc(scores2[0].doc)
         for score2 in scores2:
             doc2 = self.searcher.doc(score2.doc)
             tname = doc2.get('name')
-
+            # print(tname)
+            # print(tname,name1)
             if tname in name1:
                 docnames.append(doc2.get('name-sid'))
                 doccontents.append(doc2.get('contents'))
                 s.append(score2.score)
-                # print(score2.score)
+            #     print(score2.score)
             # print(score2.score)
             # print(maxscore)
-            if score2.score < maxscore - 10 or len(docnames) > 5:
+            if score2.score < maxscore - 10 or len(docnames) > 4:
                 break
-        return docnames, doccontents,s
+        if len(docnames) == 0:
+            if scores2[0].score > scores1[0].score:
+                docnames.append(t_doc.get('name-sid'))
+                doccontents.append(t_doc.get('contents'))
+                s.append(scores2[0].score)
+                docnames.append(self.searcher.doc(scores1[0].doc).get('name-sid'))
+                doccontents.append(self.searcher.doc(scores1[0].doc).get('contents'))
+                s.append(scores1[0].score)
+            else:
+                docnames.append(self.searcher.doc(scores1[0].doc).get('name-sid'))
+                doccontents.append(self.searcher.doc(scores1[0].doc).get('contents'))
+                s.append(scores1[0].score)
+                docnames.append(t_doc.get('name-sid'))
+                doccontents.append(t_doc.get('contents'))
+                s.append(scores2[0].score)
+            # print(docnames)
+            assert t_doc.get('name-sid').split(' ')[1] != ''
+
+            # print(docnames)
+        assert len(docnames) != 0
+        return docnames, doccontents, s
 
 
     def search(self, query, topk=10):
         query = self.repalcer(query)
-        query = QueryParser.escape(query)
+        #query = self.lemmatize_sentence(query)
+        #query = QueryParser.escape(query)
         query1 = QueryParser('name', self.analyzer).parse(query)
         query2 = QueryParser('name-contents', self.analyzer).parse(query)
-        #print(query2)
+        # print(query2)
         scores1 = self.searcher.search(query1, 30).scoreDocs
         scores2 = self.searcher.search(query2, 50).scoreDocs
         name1 = []
@@ -105,28 +156,35 @@ class Searcher():
             t = doc1.get('name')
             if t not in name1:
                 name1.append(t)
-            if len(name1)>2:
+            if len(name1)>1:
                 break
-        #print(name1)
+        # print(name1)
         name2.append(name1[0])
         docnames=[]
         doccontents=[]
+
         maxscore = scores2[0].score
+        t_doc = self.searcher.doc(scores2[0].doc)
         for score2 in scores2:
             doc2 = self.searcher.doc(score2.doc)
             tname = doc2.get('name')
-
+            # print(tname)
             if tname in name1:
                 docnames.append(doc2.get('name-sid'))
                 doccontents.append(doc2.get('contents'))
-                #print(score2.score)
-            #print(score2.score)
-            #print(maxscore)
-            if score2.score < maxscore-10 or len(docnames)>5:
                 break
-        return docnames, doccontents
+            #     print(score2.score)
+            # print(score2.score)
+            # print(maxscore)
+        if len(docnames)==0:
+            docnames.append(self.searcher.doc(scores1[0].doc).get('name-sid'))
+            doccontents.append(self.searcher.doc(scores1[0].doc).get('contents'))
+        return docnames[0], doccontents[0]
 
 
 # a = Searcher()
-# c = "Cristiano Ronaldo was unathletic."
-# b = a.search2(c)
+# c = "Fist of Legend is a remake."
+# d = a.search(c)
+# print(d)
+# b = a.search_scores(c)
+# print(b)

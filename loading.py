@@ -1,4 +1,4 @@
-import os
+import os,sys
 import pandas as pd
 import unicodedata
 from datetime import datetime
@@ -19,7 +19,8 @@ class Loader(object):
             data = json.loads(f.read())
             sup_examples, ref_examples, nei_examples = [], [], []
             c = 0
-            for i, d in list(data.items()):
+            dl = list(data.items())
+            for i, d in dl:
                 try:
                     if d['label'] == 'SUPPORTS':
                         for e in d['evidence']:
@@ -44,12 +45,11 @@ class Loader(object):
                     else:
                         if len(nei_examples) < max_sample:
                             _, content = self._search(d['claim'])
-                            for _content in content:
-                                nei_examples.append([c, i, d['claim'], _content.strip(), d['label']])
+                            nei_examples.append([c, i, d['claim'], content.strip(), d['label']])
                             c += 1
                             if c % 50 == 0:
                                 print('%d examples loaded' % c)
-                    print('%d examples loaded' % c)
+                    #print('%d examples loaded' % c)
                     if len(sup_examples) == max_sample and len(ref_examples) == max_sample \
                             and len(nei_examples) == max_sample:
                         break
@@ -68,7 +68,8 @@ class Loader(object):
             data = json.loads(f.read())
             sup_examples, ref_examples, nei_examples = [], [], []
             c = 0
-            for i, d in list(data.items()):
+            dl = list(data.items())
+            for i, d in dl:
                 try:
                     if d['label'] == 'SUPPORTS':
                         for e in d['evidence']:
@@ -93,12 +94,11 @@ class Loader(object):
                     else:
                         if len(nei_examples) < max_sample:
                             _, content = self._search(d['claim'])
-                            for _content in content:
-                                nei_examples.append([c, i, d['claim'], _content.strip(), d['label']])
+                            nei_examples.append([c, i, d['claim'], content.strip(), d['label']])
                             c += 1
                             if c % 50 == 0:
                                 print('%d examples loaded' % c)
-                    print('%d examples loaded' % c)
+                    #print('%d examples loaded' % c)
                     if len(sup_examples) == max_sample and len(ref_examples) == max_sample \
                             and len(nei_examples) == max_sample:
                         break
@@ -111,20 +111,24 @@ class Loader(object):
         return df.sample(frac=1).reset_index(drop=True)
 
     def test_loader(self):
-        dir = os.path.join(self.datadir, 'random-devset.json')
+        dir = os.path.join(self.datadir, 'devset.json')
         with open(dir) as f:
             data = json.loads(f.read())
             examples = []
             c = 0
             cc = 0
-            for i, d in list(data.items()):
-                # claim = d['claim']
+            dl = list(data.items())
+            for i, d in dl:
                 docnames, contents, scores = self._search_score(d['claim'])
+                assert len(docnames)>0
                 for j in range(len(docnames)):
                     examples.append([c, i, d['claim'], docnames[j], scores[j], contents[j].strip()])
                     c += 1
                 cc += 1
-                print('%d examples loaded' % cc)
+                if cc % 50 == 0:
+                    print('%d of %d examples loaded' % (c, len(dl)))
+        print(cc)
+        print(len(examples))
         return pd.DataFrame(examples, columns=['index', 'id', 'claim', 'docname', 'score', 'evidence'])
 
     def _retrieve(self, e):
