@@ -86,7 +86,7 @@ class Searcher():
         query2 = QueryParser('name-contents', self.analyzer).parse(query)
         # print(query2)
         scores1 = self.searcher.search(query1, 30).scoreDocs
-        scores2 = self.searcher.search(query2, 50).scoreDocs
+        scores2 = self.searcher.search(query2, 30).scoreDocs
         name1 = []
         name2 = []
         for score1 in scores1:
@@ -108,34 +108,24 @@ class Searcher():
             tname = doc2.get('name')
             # print(tname)
             # print(tname,name1)
-            if tname in name1:
+            if score2.score == maxscore:
                 docnames.append(doc2.get('name-sid'))
                 doccontents.append(doc2.get('contents'))
                 s.append(score2.score)
-            #     print(score2.score)
+                # print(docnames)
+            elif tname in name1 and score2.score > maxscore - 5:
+                docnames.append(doc2.get('name-sid'))
+                doccontents.append(doc2.get('contents'))
+                s.append(score2.score)
+                # print(docnames)
             # print(score2.score)
             # print(maxscore)
-            if score2.score < maxscore - 10 or len(docnames) > 4:
+            if len(docnames) > 2:
                 break
-        if len(docnames) == 0:
-            if scores2[0].score > scores1[0].score:
-                docnames.append(t_doc.get('name-sid'))
-                doccontents.append(t_doc.get('contents'))
-                s.append(scores2[0].score)
-                docnames.append(self.searcher.doc(scores1[0].doc).get('name-sid'))
-                doccontents.append(self.searcher.doc(scores1[0].doc).get('contents'))
-                s.append(scores1[0].score)
-            else:
-                docnames.append(self.searcher.doc(scores1[0].doc).get('name-sid'))
-                doccontents.append(self.searcher.doc(scores1[0].doc).get('contents'))
-                s.append(scores1[0].score)
-                docnames.append(t_doc.get('name-sid'))
-                doccontents.append(t_doc.get('contents'))
-                s.append(scores2[0].score)
-            # print(docnames)
-            assert t_doc.get('name-sid').split(' ')[1] != ''
-
-            # print(docnames)
+        if len(docnames) == 1 and scores1[0].score > maxscore-10:
+            docnames.append(self.searcher.doc(scores1[0].doc).get('name-sid'))
+            doccontents.append(self.searcher.doc(scores1[0].doc).get('contents'))
+            s.append(scores1[0].score)
         assert len(docnames) != 0
         return docnames, doccontents, s
 
@@ -183,7 +173,7 @@ class Searcher():
 
 
 # a = Searcher()
-# c = "Fist of Legend is a remake."
+# c = "Aleister Crowley was born on June 12, 1875."
 # d = a.search(c)
 # print(d)
 # b = a.search_scores(c)

@@ -69,6 +69,6 @@ class Inputing(object):
             return input_examples
 
 inputformatting = Inputing()
-inputformatting.input_train()
+#inputformatting.input_train()
 #inputformatting.input_dev()
-#inputformatting.input_test()
+inputformatting.input_test()

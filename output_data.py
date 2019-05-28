@@ -32,7 +32,8 @@ class Outputing(object):
         ccc=0
         print(len(labels))
         for i in range(0, len(labels)):
-
+            if i == 14700:
+                print(i)
             if i == len(labels)-1:
                 current_claim = ''
             else:
@@ -52,16 +53,17 @@ class Outputing(object):
             sc = [float(df.loc[[last_index+j[0]], 'score']) for j in s]
             rc = [float(df.loc[[last_index+j[0]], 'score']) for j in r]
             nc = [float(df.loc[[last_index+j[0]], 'score']) for j in n]
+            m = max(len(s),len(r),len(n))
             if len(sc)==0:
                 sc.append(0)
             if len(rc) == 0:
                 rc.append(0)
             maxc = float(df.loc[last_index, 'score'])
-            if rc[0] >= sc[0] and (rc[0] >= maxc-11 or len(r) >= 1):
+            if rc[0] >= sc[0] and len(r) >= 1:
 
                 evidences = []
                 for j in sss:
-                    es = df.loc[[i + j[0]], 'docname'].values[0].split(' ')
+                    es = df.loc[[last_index + j[0]], 'docname'].values[0].split(' ')
                     cf = []
                     cf.append(es[0])
                     cf.append(int(es[1]))
@@ -74,7 +76,7 @@ class Outputing(object):
                 ccc += 1
                 # print(df.loc[[last_index], ['id']].values[0][0])
                 # print(len(output), "documents recorded")
-            elif sc[0] >= maxc-11 or len(s) >= 1:
+            elif len(s) >= 1:
                 evidences = []
                 for j in sss:
                     es = df.loc[[last_index + j[0]], 'docname'].values[0].split(' ')

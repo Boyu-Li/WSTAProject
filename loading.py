@@ -111,7 +111,7 @@ class Loader(object):
         return df.sample(frac=1).reset_index(drop=True)
 
     def test_loader(self):
-        dir = os.path.join(self.datadir, 'devset.json')
+        dir = os.path.join(self.datadir, 'test-unlabelled.json')
         with open(dir) as f:
             data = json.loads(f.read())
             examples = []
@@ -126,7 +126,7 @@ class Loader(object):
                     c += 1
                 cc += 1
                 if cc % 50 == 0:
-                    print('%d of %d examples loaded' % (c, len(dl)))
+                    print('%d of %d examples loaded' % (cc, len(dl)))
         print(cc)
         print(len(examples))
         return pd.DataFrame(examples, columns=['index', 'id', 'claim', 'docname', 'score', 'evidence'])
